@@ -81,9 +81,6 @@ class SellerProductFlowTest extends TestCase
             ]
         ];
 
-        Sanctum::actingAs($seller, ['*'], 'web'); // Or however auth is set up, likely api guard
-        // The routes use auth:sanctum
-
         $token = $seller->createToken('test')->plainTextToken;
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
@@ -128,7 +125,7 @@ class SellerProductFlowTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonFragment(['name' => 'My Product']);
 
-        // PDF (Checking status, usually 200 but might fail if view issues, check simple response)
+        // PDF
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->get('api/seller/products/'.$product->id.'/pdf');
         
@@ -139,7 +136,9 @@ class SellerProductFlowTest extends TestCase
             ->deleteJson('api/seller/products/'.$product->id);
         
         $response->assertStatus(200);
-        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+        
+        // Assert Soft Deleted
+        $this->assertSoftDeleted('products', ['id' => $product->id]);
     }
 
     public function test_seller_cannot_delete_others_product()
